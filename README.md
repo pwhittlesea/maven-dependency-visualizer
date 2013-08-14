@@ -32,10 +32,10 @@ Example usage
 The following example shows how to populate a file such that the analyser will correctly parse your dependencies:
 
 To parse a POM file located at 
-[https://raw.github.com/pwhittlesea/maven-dependency-analyser/master/pom.xml](https://raw.github.com/pwhittlesea/maven-dependency-analyser/master/pom.xml "Example POM")
+[https://raw.github.com/pwhittlesea/maven-dependency-visualiser/master/pom.xml](https://raw.github.com/pwhittlesea/maven-dependency-visualiser/master/pom.xml "Example POM")
 you would create a file with the following contents
 ```
-https://raw.github.com/pwhittlesea/maven-dependency-analyser/master/
+https://raw.github.com/pwhittlesea/maven-dependency-visualiser/master/
 
 ```
 
