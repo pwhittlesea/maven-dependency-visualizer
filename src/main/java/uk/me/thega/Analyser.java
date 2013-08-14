@@ -4,17 +4,12 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
 import org.apache.maven.model.Dependency;
 import org.apache.maven.model.Model;
 
-import uk.me.thega.graph.DotColours;
 import uk.me.thega.graph.DotGenerator;
 import uk.me.thega.url.RepoURLReader;
-
-
-import fr.loria.GraphViz;
 
 /**
  * Main class for running the maven-dependency analyser.
@@ -32,18 +27,30 @@ import fr.loria.GraphViz;
  */
 public class Analyser {
 
+	/** Collection to store the links between versions of dependencies and dependees. */
 	private final Map<String, Map<String, List<String>>> dependedArtifacts = new HashMap<String, Map<String, List<String>>>();
 
+	/** The list of artifacts by groupId. */
 	private final Map<String, List<String>> artifactsByGroupId = new HashMap<String, List<String>>();
 
+	/** The repos to search. */
 	private final List<String> repos;
 
+	/** The restriction upon links printed. */
 	private final String restriction;
 
+	/** The HTTP auth username. */
 	private final String username;
 
+	/** The HTTP auth password. */
 	private final String password;
 
+	/**
+	 * The main method.
+	 * 
+	 * @param args the command line arguments
+	 * @throws Exception if analysis fails
+	 */
 	public static void main(final String[] args) throws Exception {
 		final AnalyserCLI cli = new AnalyserCLI();
 		cli.parse(args);
@@ -57,17 +64,14 @@ public class Analyser {
 		analyser.analyse();
 	}
 
-	static Map<String, String> createNodesForArtifacts(final Map<String, List<String>> artifactsToCreate) {
-		final Map<String, String> nodeMap = new HashMap<String, String>();
-		int i = 0;
-		for (final String groupId : artifactsToCreate.keySet()) {
-			for (final String artifactId : artifactsToCreate.get(groupId)) {
-				nodeMap.put(groupId + ":" + artifactId, "Node_" + i++);
-			}
-		}
-		return nodeMap;
-	}
-
+	/**
+	 * Default constructor.
+	 * 
+	 * @param repos the list of repos to search
+	 * @param restriction the restriction on created nodes
+	 * @param username the HTTP auth username
+	 * @param password the HTTP auth password
+	 */
 	public Analyser(final List<String> repos, final String restriction, final String username, final String password) {
 		this.repos = repos;
 		this.restriction = restriction;
@@ -75,14 +79,21 @@ public class Analyser {
 		this.password = password;
 	}
 
+	/**
+	 * Analyse the repos and generate the graph
+	 * 
+	 * @throws Exception if analysis fails
+	 */
 	public void analyse() throws Exception {
 		System.out.println("Processing");
 
 		final RepoURLReader pomReader = new RepoURLReader(username, password);
-		final List<Model> poms = new ArrayList<Model>();
 
+		// Fetch the models at the repo location
+		final List<Model> poms = new ArrayList<Model>();
 		for (final String repo : repos) {
-			poms.addAll(pomReader.readPomsAt(repo, ""));
+			final List<Model> foundPoms = pomReader.readPomsAt(repo);
+			poms.addAll(foundPoms);
 		}
 
 		for (final Model pom : poms) {
@@ -91,11 +102,7 @@ public class Analyser {
 
 			final List<Dependency> dependencies = pom.getDependencies();
 			for (final Dependency dependency : dependencies) {
-				final String depGroupId = dependency.getGroupId();
-				final String depArtifactId = dependency.getArtifactId();
-				final String depVersion = dependency.getVersion();
-
-				addDependencyBetweenAtrifacts(depGroupId, depArtifactId, depVersion, groupId, artifactId);
+				addDependencyBetweenAtrifacts(dependency, groupId, artifactId);
 			}
 		}
 
@@ -109,6 +116,10 @@ public class Analyser {
 
 		// Get the list of dependencies seen
 		for (final String dependency : dependedArtifacts.keySet()) {
+			final String[] dependencyComponents = dependency.split(":");
+			final String dependencyGroupId = dependencyComponents[0];
+			final String dependencyArtifactId = dependencyComponents[1];
+
 			// Get the list of dependency versions
 			final Map<String, List<String>> dependedVersions = dependedArtifacts.get(dependency);
 			for (final String dependencyVersion : dependedVersions.keySet()) {
@@ -119,11 +130,8 @@ public class Analyser {
 				for (final String dependee : dependedVersions.get(dependencyVersion)) {
 					// Get the groupId and artifactId from our components
 					final String[] dependeeComponents = dependee.split(":");
-					final String[] dependencyComponents = dependency.split(":");
 					final String dependeeGroupId = dependeeComponents[0];
 					final String dependeeArtifactId = dependeeComponents[1];
-					final String dependencyGroupId = dependencyComponents[0];
-					final String dependencyArtifactId = dependencyComponents[1];
 					if (dependee.startsWith(restriction) || dependency.startsWith(restriction)) {
 						graphGenerator.linkNodesOnGraph(dependencyGroupId, dependencyArtifactId, dependeeGroupId, dependeeArtifactId, importance);
 					}
@@ -133,7 +141,18 @@ public class Analyser {
 		System.out.println(graphGenerator.end());
 	}
 
-	private void addDependencyBetweenAtrifacts(final String depGroupId, final String depArtifactId, final String depVersion, String groupId, String artifactId) {
+	/**
+	 * Process incoming dependencies and add them to the internal storage.
+	 *  
+	 * @param dependency the dependency
+	 * @param groupId the referencing groupId
+	 * @param artifactId the referencing artifactId
+	 */
+	private void addDependencyBetweenAtrifacts(final Dependency dependency, String groupId, String artifactId) {
+		final String depGroupId = dependency.getGroupId();
+		final String depArtifactId = dependency.getArtifactId();
+		final String depVersion = dependency.getVersion();
+		
 		if (!depGroupId.startsWith(restriction)) {
 			return;
 		}
@@ -159,6 +178,12 @@ public class Analyser {
 		referencingArtifacts.add(refererUUID);
 	}
 
+	/**
+	 * Add an artifact to the list of artifacts stored by groupId.
+	 * 
+	 * @param groupId the groupId
+	 * @param artifactId the artifactId
+	 */
 	private void addArtifactToList(final String groupId, final String artifactId) {
 		if (!groupId.startsWith(restriction)) {
 			return;

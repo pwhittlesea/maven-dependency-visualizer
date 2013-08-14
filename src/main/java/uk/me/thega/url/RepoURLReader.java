@@ -3,9 +3,11 @@ package uk.me.thega.url;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileOutputStream;
+import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
+import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLConnection;
 import java.util.ArrayList;
@@ -15,12 +17,26 @@ import org.apache.maven.model.Model;
 import org.codehaus.plexus.util.Base64;
 import org.fuin.maven.MavenPomReader;
 
+/**
+ * Class to read the URLs from remote locations.
+ * 
+ * @author pwhittlesea
+ *
+ */
 public class RepoURLReader {
 
+	/** The temporary file to cache the pom.xml to. */
 	private static final File outputFile;
 
+	/** The name of the file to search for in each folder. */
 	private static final String pomName = "pom.xml";
 
+	/** The HTTP username for basic auth. */
+	private final String username;
+
+	/** The HTTP password for basic auth. */
+	private final String password;
+	
 	static {
 		String tempPath = System.getProperty("java.io.tmpdir");
 		// a fix to handle the crazy path the Mac JVM returns
@@ -34,11 +50,15 @@ public class RepoURLReader {
 		outputFile = new File(repositoryDir + "/temp.pom");
 	}
 
-	private final String username;
-
-	private final String password;
-	
-	public static void readGitUrlToFile(final URL url, final String username, final String password, final File outputFile) throws Exception {
+	/**
+	 * Read a file at a URL to a specified file.
+	 * 
+	 * @param url the URL to read.
+	 * @param username the basic HTTP user name.
+	 * @param password the basic HTTP password.
+	 * @throws IOException if reading/writing the file fails.
+	 */
+	static void readGitUrlToFile(final URL url, final String username, final String password) throws IOException {
 		final URLConnection uc = url.openConnection();
 		
 		if (username != null && password != null) {
@@ -66,22 +86,44 @@ public class RepoURLReader {
 		os.close();
 	}
 
+	/**
+	 * Default constructor.
+	 * 
+	 * @param username the basic HTTP user name.
+	 * @param password the basic HTTP password.
+	 */
 	public RepoURLReader(final String username, final String password) {
 		this.username = username;
 		this.password = password;
 	}
 
-	public List<Model> readPomsAt(final String repo, final String subDir) throws Exception {
+	/**
+	 * Read the pom (and child modules) at the specified location.
+	 * 
+	 * @param repo the repo to read from
+	 * @return the list of Poms at the location
+	 * @throws MalformedURLException if the repo specified cannot be loaded.
+	 */
+	public List<Model> readPomsAt(final String repo) throws MalformedURLException {
 		final List<Model> modules = new ArrayList<Model>();
-		recursivelyReadPomsAt(modules, repo, subDir);
+		recursivelyReadPomsAt(modules, repo, "");
 		return modules;
 	}
 
-	private void recursivelyReadPomsAt(List<Model> modules, final String repo, final String subDir) throws Exception {
+	/**
+	 * Read the Pom (and child modules) at the specified location 
+	 * and sub-directory
+	 * 
+	 * @param modules the list of already found modules.
+	 * @param repo the repo to search.
+	 * @param subDir the sub-directory to search.
+	 * @throws MalformedURLException if the location cannot be loaded.
+	 */
+	private void recursivelyReadPomsAt(List<Model> modules, final String repo, final String subDir) throws MalformedURLException {
 		final URL url = new URL(repo + pomName);
 
 		try {
-			RepoURLReader.readGitUrlToFile(url, username, password, outputFile);
+			RepoURLReader.readGitUrlToFile(url, username, password);
 		} catch (Exception e) {
 			return;
 		}

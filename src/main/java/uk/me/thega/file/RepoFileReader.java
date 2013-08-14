@@ -9,8 +9,21 @@ import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * Reader for a list of repos stored in a file.
+ * 
+ * @author pwhittlesea
+ *
+ */
 public class RepoFileReader {
 
+	/**
+	 * Read the list of repos from the file specified.
+	 * 
+	 * @param fileName the filename
+	 * @return the list of repos.
+	 * @throws IOException if the specified file cannot be read.
+	 */
 	public static List<String> getReposFromFile(final String fileName) throws IOException {
 		final List<String> repos = new ArrayList<String>();
 		InputStream content = null;

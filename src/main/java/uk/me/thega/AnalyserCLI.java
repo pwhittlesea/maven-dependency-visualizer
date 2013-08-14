@@ -15,19 +15,41 @@ import org.apache.commons.cli.ParseException;
 
 import uk.me.thega.file.RepoFileReader;
 
-
+/**
+ * Command line parser for the Analyser application.
+ * 
+ * @author pwhittlesea
+ *
+ */
 public class AnalyserCLI {
 
+	/** The file argument the user must specify. */
 	final static String FILE_ARGUMENT = "file";
 
+	/** The restriction argument the user must specify. */
 	final static String RESTRICTION_ARGUMENT = "restriction";
 
+	/** The username argument the user must specify. */
 	final static String USERNAME_ARGUMENT = "username";
 
+	/** The password argument the user must specify. */
 	final static String PASSWORD_ARGUMENT = "password";
 
+	/** The parsed command line arguments. */
 	private CommandLine cmd;
 
+	/**
+	 * Fetch the command line options that are available to the user.
+	 * <br>
+	 * For example:
+	 * <table>
+	 * <tr>
+	 * <td>-f</td><td>file</td><td>File to read repos from</td>
+	 * </tr>
+	 * </table>
+	 * 
+	 * @return the {@link Options} for the application.
+	 */
 	static Options getCLIOptions() {
 		final Options options = new Options();
 		options.addOption(FILE_ARGUMENT, true, "File to read repos from");
@@ -37,12 +59,21 @@ public class AnalyserCLI {
 		return options;
 	}
 
+	/**
+	 * Parse an array of strings for the arguments specified by {@link #getCLIOptions()}
+	 * 
+	 * @param args the arguments to parse
+	 * @throws ConfigurationException thrown if the user fails to specify a required parameter
+	 * @throws ParseException thrown if the input cannot be parsed
+	 */
 	public void parse(final String[] args) throws ConfigurationException, ParseException {
 		// create the command line parser
 		final CommandLineParser parser = new BasicParser();
 		final Options options = getCLIOptions();
 
 		cmd = parser.parse(options, args);
+
+		// Check that the user has specified all the required options
 		for (final Object req : options.getRequiredOptions()) {
 			final Option option = (Option) req;
 			if (!cmd.hasOption(option.getArgName())) {
@@ -53,37 +84,67 @@ public class AnalyserCLI {
 		}
 	}
 
-	public List<String> getRepoPaths() throws ConfigurationException, IOException {
+	/**
+	 * Get the command line and check it is not null
+	 * 
+	 * @return the command line
+	 * @throws ConfigurationException if the cmd is null
+	 */
+	private CommandLine getCommandLine() throws ConfigurationException {
 		if (cmd == null) {
 			throw new ConfigurationException("Cmd not initialised");
 		}
+		return cmd;
+	}
+
+	/**
+	 * Get the paths specified in the input file
+	 * 
+	 * @return the list of repositories to scan
+	 * @throws ConfigurationException if cmd is null
+	 * @throws IOException if the specified file is not readable
+	 */
+	public List<String> getRepoPaths() throws ConfigurationException, IOException {
+		final CommandLine cmd = getCommandLine();
 		return RepoFileReader.getReposFromFile(cmd.getOptionValue(FILE_ARGUMENT));
 	}
 
+	/**
+	 * Get the restriction on artifacts specified by the user
+	 * 
+	 * @return the restriction
+	 * @throws ConfigurationException if cmd is null
+	 */
 	public String getRestriction() throws ConfigurationException {
-		if (cmd == null) {
-			throw new ConfigurationException("Cmd not initialised");
-		}
+		final CommandLine cmd = getCommandLine();
 		if (cmd.hasOption(RESTRICTION_ARGUMENT)) {
 			return cmd.getOptionValue(RESTRICTION_ARGUMENT);
 		}
 		return "";
 	}
 
+	/**
+	 * Get the HTTP auth username
+	 * 
+	 * @return the HTTP auth username
+	 * @throws ConfigurationException if cmd is null
+	 */
 	public String getUsername() throws ConfigurationException {
-		if (cmd == null) {
-			throw new ConfigurationException("Cmd not initialised");
-		}
+		final CommandLine cmd = getCommandLine();
 		if (cmd.hasOption(USERNAME_ARGUMENT)) {
 			return cmd.getOptionValue(USERNAME_ARGUMENT);
 		}
 		return null;
 	}
 
+	/**
+	 * Get the HTTP auth password
+	 * 
+	 * @return the HTTP auth password
+	 * @throws ConfigurationException if cmd is null
+	 */
 	public String getPassword() throws ConfigurationException {
-		if (cmd == null) {
-			throw new ConfigurationException("Cmd not initialised");
-		}
+		final CommandLine cmd = getCommandLine();
 		if (cmd.hasOption(PASSWORD_ARGUMENT)) {
 			return cmd.getOptionValue(PASSWORD_ARGUMENT);
 		}
