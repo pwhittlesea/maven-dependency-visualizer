@@ -120,7 +120,7 @@ public class RepoURLReader {
 	 * @throws MalformedURLException if the location cannot be loaded.
 	 */
 	private void recursivelyReadPomsAt(List<Model> modules, final String repo, final String subDir) throws MalformedURLException {
-		final URL url = new URL(repo + pomName);
+		final URL url = new URL(repo + subDir + pomName);
 
 		try {
 			RepoURLReader.readGitUrlToFile(url, username, password);

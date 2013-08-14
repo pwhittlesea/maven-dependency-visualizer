@@ -18,8 +18,7 @@ public class DotColours {
 		"purple", 
 		"maroon", 
 		"brown", 
-		"greenyellow", 
-		"olive" 
+		"greenyellow"
 	};
 
 	/** The current colour. */

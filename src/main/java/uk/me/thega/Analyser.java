@@ -46,6 +46,9 @@ public class Analyser {
 	/** The HTTP auth password. */
 	private final String password;
 
+	/** Do we print test dependencies? */
+	private final boolean includeTestDeps;
+
 	/**
 	 * The main method.
 	 * 
@@ -60,8 +63,9 @@ public class Analyser {
 		final List<String> repos = RepoFileReader.getReposFromFile(cli.getFile());
 		final String username = cli.getUsername();
 		final String password = cli.getPassword();
+		final boolean printTest = cli.getTestPreference();
 
-		final Analyser analyser = new Analyser(repos, restriction, username, password);
+		final Analyser analyser = new Analyser(repos, restriction, username, password, printTest);
 		analyser.analyse();
 	}
 
@@ -70,14 +74,16 @@ public class Analyser {
 	 * 
 	 * @param repos the list of repos to search
 	 * @param restriction the restriction on created nodes
-	 * @param username the HTTP auth username
+	 * @param username the HTTP auth user name
 	 * @param password the HTTP auth password
+	 * @param printTest do we want test dependencies?
 	 */
-	public Analyser(final List<String> repos, final String restriction, final String username, final String password) {
+	public Analyser(final List<String> repos, final String restriction, final String username, final String password, final boolean printTest) {
 		this.repos = repos;
 		this.restriction = restriction;
 		this.username = username;
 		this.password = password;
+		this.includeTestDeps = printTest;
 	}
 
 	/**
@@ -103,7 +109,9 @@ public class Analyser {
 
 			final List<Dependency> dependencies = pom.getDependencies();
 			for (final Dependency dependency : dependencies) {
-				addDependencyBetweenAtrifacts(dependency, groupId, artifactId);
+				if (includeTestDeps || dependency.getScope() == null || (dependency.getScope() != null && !dependency.getScope().equals("test"))) {
+					addDependencyBetweenAtrifacts(dependency, groupId, artifactId);
+				}
 			}
 		}
 
@@ -153,10 +161,6 @@ public class Analyser {
 		final String depGroupId = dependency.getGroupId();
 		final String depArtifactId = dependency.getArtifactId();
 		final String depVersion = dependency.getVersion();
-		
-		if (!depGroupId.startsWith(restriction)) {
-			return;
-		}
 
 		// Create the UUID for this artifact
 		final String refererUUID = groupId + ":" + artifactId;
@@ -186,9 +190,6 @@ public class Analyser {
 	 * @param artifactId the artifactId
 	 */
 	private void addArtifactToList(final String groupId, final String artifactId) {
-		if (!groupId.startsWith(restriction)) {
-			return;
-		}
 		if (!artifactsByGroupId.containsKey(groupId)) {
 			artifactsByGroupId.put(groupId, new ArrayList<String>());
 		}

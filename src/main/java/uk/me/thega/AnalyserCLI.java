@@ -1,13 +1,12 @@
 package uk.me.thega;
 
-import java.util.List;
-
 import javax.naming.ConfigurationException;
 
 import org.apache.commons.cli.BasicParser;
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.CommandLineParser;
 import org.apache.commons.cli.HelpFormatter;
+import org.apache.commons.cli.MissingOptionException;
 import org.apache.commons.cli.Option;
 import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
@@ -26,11 +25,14 @@ public class AnalyserCLI {
 	/** The restriction argument the user must specify. */
 	final static String RESTRICTION_ARGUMENT = "restriction";
 
-	/** The username argument the user must specify. */
+	/** The user name argument the user must specify. */
 	final static String USERNAME_ARGUMENT = "username";
 
 	/** The password argument the user must specify. */
 	final static String PASSWORD_ARGUMENT = "password";
+
+	/** The test argument the user must specify. */
+	final static String TEST_ARGUMENT = "printTest";
 
 	/** The parsed command line arguments. */
 	private CommandLine cmd;
@@ -54,6 +56,7 @@ public class AnalyserCLI {
 		final Option restriction = new Option(RESTRICTION_ARGUMENT, true, "Artifact restriction");
 		final Option username = new Option(USERNAME_ARGUMENT, true, "Username for web requests (if needed)");
 		final Option password = new Option(PASSWORD_ARGUMENT, true, "Password for web requests (if needed)");
+		final Option test = new Option(TEST_ARGUMENT, true, "Include test dependencies");
 		
 		file.setRequired(true);
 
@@ -61,6 +64,7 @@ public class AnalyserCLI {
 		options.addOption(restriction);
 		options.addOption(username);
 		options.addOption(password);
+		options.addOption(test);
 
 		return options;
 	}
@@ -77,17 +81,13 @@ public class AnalyserCLI {
 		final CommandLineParser parser = new BasicParser();
 		final Options options = getCLIOptions();
 
-		cmd = parser.parse(options, args);
-
-		// Check that the user has specified all the required options
-		@SuppressWarnings("unchecked")
-		final List<String> requiredObjects = options.getRequiredOptions();
-		for (final String option : requiredObjects) {
-			if (!cmd.hasOption(option)) {
-				final HelpFormatter formatter = new HelpFormatter();
-				formatter.printHelp(AnalyserCLI.class.getSimpleName(), options);
-				throw new ConfigurationException("Required option was abscent: [" + option + "]");
-			}
+		try {
+			cmd = parser.parse(options, args);
+		} catch (final MissingOptionException e) {
+			final HelpFormatter formatter = new HelpFormatter();
+			formatter.setOptPrefix(" --");
+			formatter.printHelp(AnalyserCLI.class.getSimpleName(), options);
+			throw e;
 		}
 	}
 
@@ -155,5 +155,19 @@ public class AnalyserCLI {
 			return cmd.getOptionValue(PASSWORD_ARGUMENT);
 		}
 		return null;
+	}
+
+	/**
+	 * Does the user want test dependencies?
+	 * 
+	 * @return if we want test dependencies
+	 * @throws ConfigurationException if cmd is null
+	 */
+	public boolean getTestPreference() throws ConfigurationException {
+		final CommandLine cmd = getCommandLine();
+		if (cmd.hasOption(TEST_ARGUMENT)) {
+			return (cmd.getOptionValue(TEST_ARGUMENT).equals("true")) ? true : false;
+		}
+		return false;
 	}
 }
