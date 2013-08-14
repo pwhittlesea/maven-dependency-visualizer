@@ -1,5 +1,5 @@
-maven-dependency-analyser
-=========================
+maven-dependency-visualiser
+===========================
 
 Dot Graph generator for maven dependencies in hosted repositories
 
