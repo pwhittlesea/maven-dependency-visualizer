@@ -4,22 +4,37 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import org.apache.maven.model.Dependency;
 import org.apache.maven.model.Model;
 
+import uk.me.thega.graph.DotColours;
+import uk.me.thega.graph.DotGenerator;
 import uk.me.thega.url.RepoURLReader;
 
 
 import fr.loria.GraphViz;
 
+/**
+ * Main class for running the maven-dependency analyser.
+ * <br>
+ * Takes arguments for:
+ * <ul>
+ * <li>The file to read the repo paths from</li>
+ * <li>The restriction upon the artifacts mapped</li>
+ * <li>The username if the repos are behind basic HTTP authentication</li>
+ * <li>The password if the repos are behind basic HTTP authentication</li>
+ * </ul>
+ * 
+ * @author pwhittlesea
+ *
+ */
 public class Analyser {
 
-	private static String[] colours = { "red", "blue", "green", "yellow", "orange", "purple", "maroon", "brown", "greenyellow", "olive" };
+	private final Map<String, Map<String, List<String>>> dependedArtifacts = new HashMap<String, Map<String, List<String>>>();
 
-	private final Map<String, Map<String, List<String>>> depsByVersion = new HashMap<String, Map<String, List<String>>>();
-
-	private final Map<String, List<String>> artifactsToCreate = new HashMap<String, List<String>>();
+	private final Map<String, List<String>> artifactsByGroupId = new HashMap<String, List<String>>();
 
 	private final List<String> repos;
 
@@ -86,44 +101,34 @@ public class Analyser {
 
 		System.out.println("Processed " + poms.size() + " modules");
 
-		final Map<String, String> nodeMap = createNodesForArtifacts(artifactsToCreate);
-		final Map<String, String> nodeColour = new HashMap<String, String>();
+		final DotGenerator graphGenerator = new DotGenerator();
+		graphGenerator.start(1000, 1000);
+		
+		// Write all the artifacts to the graph, this does not include links
+		graphGenerator.writeNodesToGraph(true, artifactsByGroupId);
 
-		final GraphViz gv = new GraphViz();
-		gv.addln(gv.start_graph());
-		gv.addln("size=\"1000,1000\";");
-
-		int i = 0;
-
-		for (final String groupId : artifactsToCreate.keySet()) {
-			gv.addln("subgraph cluster_" + i++ + " {");
-			gv.addln("label=\"" + groupId + "\";");
-			gv.addln("color=" + colours[i] + ";");
-			gv.addln("style=dashed;");
-			for (final String artifactId : artifactsToCreate.get(groupId)) {
-				final String artifact = groupId + ":" + artifactId;
-				nodeColour.put(artifact, colours[i]);
-				gv.addln(nodeMap.get(artifact) + " [label=\"" + artifactId + "\", shape=box];");
-			}
-			gv.addln("}");
-		}
-
-		for (final String dependency : depsByVersion.keySet()) {
-			final Map<String, List<String>> versionUsers = depsByVersion.get(dependency);
-			for (final String version : versionUsers.keySet()) {
-				for (final String user : versionUsers.get(version)) {
-					if (nodeMap.get(dependency) == null || nodeMap.get(user) == null) {
-						System.out.println("BROKEN: " + user + " -> " + dependency);
-					} else if (user.startsWith(restriction) || dependency.startsWith(restriction)) {
-						gv.addln(nodeMap.get(user) + " -> " + nodeMap.get(dependency) + " [color=" + nodeColour.get(user) + "];");
-					}
+		// Get the list of dependencies seen
+		for (final String dependency : dependedArtifacts.keySet()) {
+			// Get the list of dependency versions
+			final Map<String, List<String>> dependedVersions = dependedArtifacts.get(dependency);
+			for (final String dependencyVersion : dependedVersions.keySet()) {
+				// TODO Figure out which is the latest version of a Dependency
+				final boolean outOfDate = false;
+				final int importance = (outOfDate) ? 10 : 1;
+				// Iterate over the modules that depend upon our current dependency version 
+				for (final String dependee : dependedVersions.get(dependencyVersion)) {
+					// Get the groupId and artifactId from our components
+					final String[] dependeeComponents = dependee.split(":");
+					final String[] dependencyComponents = dependency.split(":");
+					final String dependeeGroupId = dependeeComponents[0];
+					final String dependeeArtifactId = dependeeComponents[1];
+					final String dependencyGroupId = dependencyComponents[0];
+					final String dependencyArtifactId = dependencyComponents[1];
+					graphGenerator.linkNodesOnGraph(dependencyGroupId, dependencyArtifactId, dependeeGroupId, dependeeArtifactId, importance);
 				}
 			}
 		}
-
-		gv.addln(gv.end_graph());
-		gv.addln();
-		System.out.println(gv.getDotSource());
+		System.out.println(graphGenerator.end());
 	}
 
 	private void addDependencyBetweenAtrifacts(final String depGroupId, final String depArtifactId, final String depVersion, String groupId, String artifactId) {
@@ -141,10 +146,10 @@ public class Analyser {
 		addArtifactToList(groupId, artifactId);
 		addArtifactToList(depGroupId, depArtifactId);
 
-		if (!depsByVersion.containsKey(depUUID)) {
-			depsByVersion.put(depUUID, new HashMap<String, List<String>>());
+		if (!dependedArtifacts.containsKey(depUUID)) {
+			dependedArtifacts.put(depUUID, new HashMap<String, List<String>>());
 		}
-		final Map<String, List<String>> artifactVersions = depsByVersion.get(depUUID);
+		final Map<String, List<String>> artifactVersions = dependedArtifacts.get(depUUID);
 		if (!artifactVersions.containsKey(depVersion)) {
 			artifactVersions.put(depVersion, new ArrayList<String>());
 		}
@@ -156,10 +161,10 @@ public class Analyser {
 		if (!groupId.startsWith(restriction)) {
 			return;
 		}
-		if (!artifactsToCreate.containsKey(groupId)) {
-			artifactsToCreate.put(groupId, new ArrayList<String>());
+		if (!artifactsByGroupId.containsKey(groupId)) {
+			artifactsByGroupId.put(groupId, new ArrayList<String>());
 		}
-		final List<String> list = artifactsToCreate.get(groupId);
+		final List<String> list = artifactsByGroupId.get(groupId);
 		if (!list.contains(artifactId)) {
 			list.add(artifactId);
 		}
