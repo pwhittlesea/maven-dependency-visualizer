@@ -49,7 +49,9 @@ public class DotGenerator {
 	public void linkNodesOnGraph(final String depGroupId, final String depArtifactId, final String groupId, final String artifactId, final int importance) {
 		final String dependeeNodeId = getNodeIdForArtifact(groupId, artifactId);
 		final String dependencyNodeId = getNodeIdForArtifact(depGroupId, depArtifactId);
-		gv.addln(linkString(dependeeNodeId, dependencyNodeId, groupIdColours.get(groupId), importance));
+		if (dependeeNodeId != null && dependencyNodeId != null) {
+			gv.addln(linkString(dependeeNodeId, dependencyNodeId, groupIdColours.get(groupId), importance));
+		}
 	}
 
 	/**

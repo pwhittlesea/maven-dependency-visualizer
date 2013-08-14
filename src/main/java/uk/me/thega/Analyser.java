@@ -124,7 +124,9 @@ public class Analyser {
 					final String dependeeArtifactId = dependeeComponents[1];
 					final String dependencyGroupId = dependencyComponents[0];
 					final String dependencyArtifactId = dependencyComponents[1];
-					graphGenerator.linkNodesOnGraph(dependencyGroupId, dependencyArtifactId, dependeeGroupId, dependeeArtifactId, importance);
+					if (dependee.startsWith(restriction) || dependency.startsWith(restriction)) {
+						graphGenerator.linkNodesOnGraph(dependencyGroupId, dependencyArtifactId, dependeeGroupId, dependeeArtifactId, importance);
+					}
 				}
 			}
 		}
