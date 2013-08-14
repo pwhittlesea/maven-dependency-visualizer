@@ -1,4 +1,4 @@
-maven-dependency-visualiser
+maven-dependency-visualizer
 ===========================
 
 Dot Graph generator for maven dependencies in hosted repositories
@@ -31,11 +31,11 @@ Example usage
 -------------
 The following example shows how to populate a file such that the analyser will correctly parse your dependencies:
 
-To parse a POM file located at 
-[https://raw.github.com/pwhittlesea/maven-dependency-visualiser/master/pom.xml](https://raw.github.com/pwhittlesea/maven-dependency-visualiser/master/pom.xml "Example POM")
+To parse a POM file located at
+[https://raw.github.com/pwhittlesea/maven-dependency-visualizer/master/pom.xml](https://raw.github.com/pwhittlesea/maven-dependency-visualizer/master/pom.xml "Example POM")
 you would create a file with the following contents
 ```
-https://raw.github.com/pwhittlesea/maven-dependency-visualiser/master/
+https://raw.github.com/pwhittlesea/maven-dependency-visualizer/master/
 
 ```
 
@@ -53,7 +53,7 @@ digraph G {
         label="uk.me.thega";
         color=green;
         style=dashed;
-        Node_1 [label="analyser", shape=box];
+        Node_1 [label="dependency-visualizer", shape=box];
     }
     subgraph cluster_2 {
         label="commons-cli";
