@@ -1,6 +1,5 @@
 package uk.me.thega;
 
-import java.io.IOException;
 import java.util.List;
 
 import javax.naming.ConfigurationException;
@@ -12,8 +11,6 @@ import org.apache.commons.cli.HelpFormatter;
 import org.apache.commons.cli.Option;
 import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
-
-import uk.me.thega.file.RepoFileReader;
 
 /**
  * Command line parser for the Analyser application.
@@ -52,10 +49,19 @@ public class AnalyserCLI {
 	 */
 	static Options getCLIOptions() {
 		final Options options = new Options();
-		options.addOption(FILE_ARGUMENT, true, "File to read repos from");
-		options.addOption(RESTRICTION_ARGUMENT, false, "Artifact restriction");
-		options.addOption(USERNAME_ARGUMENT, false, "Username for web requests (if needed)");
-		options.addOption(PASSWORD_ARGUMENT, false, "Password for web requests (if needed)");
+
+		final Option file = new Option(FILE_ARGUMENT, true, "File to read repos from");
+		final Option restriction = new Option(RESTRICTION_ARGUMENT, true, "Artifact restriction");
+		final Option username = new Option(USERNAME_ARGUMENT, true, "Username for web requests (if needed)");
+		final Option password = new Option(PASSWORD_ARGUMENT, true, "Password for web requests (if needed)");
+		
+		file.setRequired(true);
+
+		options.addOption(file);
+		options.addOption(restriction);
+		options.addOption(username);
+		options.addOption(password);
+
 		return options;
 	}
 
@@ -74,12 +80,13 @@ public class AnalyserCLI {
 		cmd = parser.parse(options, args);
 
 		// Check that the user has specified all the required options
-		for (final Object req : options.getRequiredOptions()) {
-			final Option option = (Option) req;
-			if (!cmd.hasOption(option.getArgName())) {
+		@SuppressWarnings("unchecked")
+		final List<String> requiredObjects = options.getRequiredOptions();
+		for (final String option : requiredObjects) {
+			if (!cmd.hasOption(option)) {
 				final HelpFormatter formatter = new HelpFormatter();
 				formatter.printHelp(AnalyserCLI.class.getSimpleName(), options);
-				throw new ConfigurationException("Required option was abscent: [" + option.getArgName() + "]");
+				throw new ConfigurationException("Required option was abscent: [" + option + "]");
 			}
 		}
 	}
@@ -98,15 +105,14 @@ public class AnalyserCLI {
 	}
 
 	/**
-	 * Get the paths specified in the input file
+	 * Get the path of the file containing the repos to scan.
 	 * 
-	 * @return the list of repositories to scan
+	 * @return the string of the file passed to the application
 	 * @throws ConfigurationException if cmd is null
-	 * @throws IOException if the specified file is not readable
 	 */
-	public List<String> getRepoPaths() throws ConfigurationException, IOException {
+	public String getFile() throws ConfigurationException {
 		final CommandLine cmd = getCommandLine();
-		return RepoFileReader.getReposFromFile(cmd.getOptionValue(FILE_ARGUMENT));
+		return cmd.getOptionValue(FILE_ARGUMENT);
 	}
 
 	/**

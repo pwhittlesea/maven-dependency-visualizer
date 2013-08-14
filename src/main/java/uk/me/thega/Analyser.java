@@ -8,6 +8,7 @@ import java.util.Map;
 import org.apache.maven.model.Dependency;
 import org.apache.maven.model.Model;
 
+import uk.me.thega.file.RepoFileReader;
 import uk.me.thega.graph.DotGenerator;
 import uk.me.thega.url.RepoURLReader;
 
@@ -56,7 +57,7 @@ public class Analyser {
 		cli.parse(args);
 
 		final String restriction = cli.getRestriction();
-		final List<String> repos = cli.getRepoPaths();
+		final List<String> repos = RepoFileReader.getReposFromFile(cli.getFile());
 		final String username = cli.getUsername();
 		final String password = cli.getPassword();
 
