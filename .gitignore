@@ -1,1 +1,14 @@
+# Maven #
 target/
+
+# Eclipse #
+.project
+.classpath
+
+# Compiled Classes #
+*.class
+
+# Package Files #
+*.jar
+*.war
+*.ear
