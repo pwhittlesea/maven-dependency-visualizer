@@ -3,7 +3,7 @@ maven-dependency-visualizer
 
 Dot Graph generator for maven dependencies in hosted repositories
 
-![Example Output](https://github-camo.global.ssl.fastly.net/f0f947fe53944c3d3dc7cffb5b311c3d0f75dab4/687474703a2f2f692e696d6775722e636f6d2f625a38643933502e706e67)
+![Example Output](https://github-camo.global.ssl.fastly.net/0cae3c4178ec30d7a19d05fb526b3ef502a559dc/687474703a2f2f692e696d6775722e636f6d2f654657694939482e706e67)
 
 Build Instructions
 ------------------
@@ -79,5 +79,5 @@ digraph G {
     Node_1 -> Node_2 [color=green,penwidth=1];
 }
 ```
-Which can be run through a 'dot' image process to produce an image such as that shown [here](https://github-camo.global.ssl.fastly.net/f0f947fe53944c3d3dc7cffb5b311c3d0f75dab4/687474703a2f2f692e696d6775722e636f6d2f625a38643933502e706e67 "Dependency Graph").
+Which can be run through a 'dot' image process to produce an image such as that shown [here](https://github-camo.global.ssl.fastly.net/0cae3c4178ec30d7a19d05fb526b3ef502a559dc/687474703a2f2f692e696d6775722e636f6d2f654657694939482e706e67 "Dependency Graph").
 
